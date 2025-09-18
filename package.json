@@ -1,0 +1,35 @@
+{
+  "name": "dialog-list-card",
+  "description": "A Home Assistant card to open a dialog with a list",
+  "version": "0.0.1",
+  "author": "Ralf Z",
+  "type": "module",
+  "bugs": "https://github.com/rzeiler/dialog-list-card/issues",
+  "homepage": "https://github.com/rzeiler/dialog-list-card",
+  "keywords": [
+    "automation",
+    "custom-cards",
+    "custom-dialog",
+    "custom-list",
+    "hass",
+    "home-assistant",
+    "homeassistant",
+    "dialog",
+    "list"
+  ],
+  "files": [
+    "dialog-list-card.js"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack --mode production",
+    "start": "webpack serve --mode development --config webpack.config.cjs"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  }
+}

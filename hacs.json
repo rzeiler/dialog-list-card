@@ -1,0 +1,7 @@
+{
+    "name": "Dialog List Card",
+    "content_in_root": true,
+    "filename": "dialog-list-card.js",
+    "render_readme": true,
+    "domains": ["script","ligth"]
+}
