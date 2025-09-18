@@ -1,4 +1,4 @@
-# Dialog List Card
+# 🚀Dialog List Card
 
 ![Version][version-src]
 [![HACS: Default][hacs-src]][hacs-href]
@@ -6,7 +6,7 @@
 [![Hits per month][hits-src]][hits-href]
 [![Downloads total][total-src]][total-href]
 
-> A Home Assistant card for Dialog with List
+> ⚡A Home Assistant card that opens a dialog with a list
 
 ![Card](https://raw.githubusercontent.com/rzeiler/dialog-list-card/main/assets/card.png)
 ![Card-Color](https://raw.githubusercontent.com/rzeiler/dialog-list-card/main/assets/card-color.png)
