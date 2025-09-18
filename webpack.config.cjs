@@ -1,5 +1,6 @@
 // webpack.config.js
 const path = require("path");
+const TerserPlugin = require("terser-webpack-plugin");
 
 // import path from "path";
 
@@ -9,6 +10,18 @@ module.exports = {
   output: {
     filename: "dialog-list-card.js",
     path: path.resolve(__dirname, "."),
+  },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: true,
+          },
+        },
+      }),
+    ],
   },
   devServer: {
     static: {

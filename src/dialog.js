@@ -1,3 +1,5 @@
+import { createCE, updateCE } from "./utils.js";
+
 class DialogList extends HTMLElement {
   constructor() {
     super();
@@ -8,72 +10,57 @@ class DialogList extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this._update();
   }
 
   set config(config) {
     this._config = config;
-    this._update();
   }
 
-  connectedCallback() {
-    this.render();
-  }
+  connectedCallback() {}
 
   render() {
-    this.shadowRoot.innerHTML = `
-      <style>
-        @media (min-width: 600px) and (min-height: 501px) {
-            ha-dialog {
-                --mdc-dialog-min-width: 580px;
-                --mdc-dialog-max-width: 580px;
-                --mdc-dialog-max-height: calc(100% - 72px);
-            }
-        }
-        ha-dialog {
-            --vertical-align-dialog: flex-start;
-            --dialog-surface-margin-top: 40px;
-            --dialog-content-padding: 0;
-        }
-      </style>
-      <ha-dialog>
-        <ha-list>
-          
-        </ha-list>
-      <ha-dialog>
-    `;
+    this.dialog = createCE("ha-dialog", {
+      props: {
+        heading: "Details",
+        hideActions: true,
+        scrimClickAction: true,
+        escapeKeyAction: true,
+        heading: this._config.title,
+      },
+      cssVars: {
+        "--vertical-align-dialog": "flex-start",
+        "--dialog-surface-margin-top": "40px",
+        "--dialog-content-padding": "0px",
+        "--mdc-dialog-min-width": this.isWide ? "580px" : "90vw",
+        "--mdc-dialog-max-width": this.isWide ? "580px" : "90vw",
+        "--mdc-dialog-max-height": "calc(100% - 72px)",
+      },
+    });
+    this.dialog.addEventListener("closed", () => {
+      this.shadowRoot.innerHTML = "";
+    });
 
-    this.dialog = this.shadowRoot.querySelector("ha-dialog");
+    this.shadowRoot.appendChild(this.dialog);
 
-    this.dialog.open = false;
-    this.dialog.hideActions = true;
-    this.dialog.scrimClickAction = true;
-    this.dialog.escapeKeyAction;
+    this.list = createCE("ha-list");
+    this.dialog.appendChild(this.list);
+
+    this._config.entities.map((ent) => {
+      const st = this._hass.states[ent];
+      const listIitem = this.getListItem(ent);
+
+      // Aktion aufrufen
+      const call = () => this.serviceCall(listIitem.domain, ent);
+      listIitem.addEventListener("click", call);
+      listIitem.addEventListener("touchend", call);
+
+      this.list.appendChild(listIitem);
+    });
   }
 
-  _update() {
-    if (!this.shadowRoot) return;
-
-    const haList = this.dialog.querySelector("ha-list");
-
-    if (this._config) {
-      this.dialog.heading = this._config.title;
-    }
-
-    if (this._hass && this._config?.entities) {
-      haList.innerHTML = "";
-      this._config.entities.map((ent) => {
-        const st = this._hass.states[ent];
-        const listIitem = this.getListItem(ent);
-
-        // Aktion aufrufen
-        const call = () => this.serviceCall(listIitem.domain, ent);
-        listIitem.addEventListener("click", call);
-        listIitem.addEventListener("touchend", call);
-
-        haList.appendChild(listIitem);
-      });
-    }
+  isWide() {
+    return window.matchMedia("(min-width: 600px) and (min-height: 501px)")
+      .matches;
   }
 
   serviceCall(domain, ent) {
@@ -95,7 +82,7 @@ class DialogList extends HTMLElement {
   }
 
   open() {
-    this._update();
+    this.render();
     this.dialog.open = !this.dialog.open;
   }
 
@@ -104,39 +91,60 @@ class DialogList extends HTMLElement {
     const st = this._hass.states[ent];
     if (!st) return;
 
-    const listItem = document.createElement("ha-md-list-item");
-    listItem.classList.add("two-line");
-    listItem.type = "button";
-    listItem.interactive = true;
-    listItem.multiline = true;
+    const listItem = createCE("ha-md-list-item", {
+      props: {
+        interactive: true,
+        multiline: true,
+      },
+      attrs: {
+        type: "button",
+      },
+    });
 
-    const headline = document.createElement("span");
-    headline.innerText = item.title || st.attributes.friendly_name || ent;
-    headline.slot = "headline";
-    listItem.appendChild(headline);
+    const relativeTime = createCE("ha-relative-time", {
+      props: {
+        hass: this._hass,
+        datetime: st?.attributes.last_triggered,
+      },
+      attrs: {
+        slot: "supporting-text",
+      },
+    });
 
-    const relativeTime = document.createElement("ha-relative-time");
-    relativeTime.hass = this._hass;
-    relativeTime.slot = "supporting-text";
-    relativeTime.datetime = st?.attributes.last_triggered;
     listItem.appendChild(relativeTime);
+
+    const headline = createCE("span", {
+      attrs: {
+        slot: "headline",
+        datetime: st?.attributes.last_triggered,
+      },
+      text: item.title || st.attributes.friendly_name || ent,
+    });
+    listItem.appendChild(headline);
 
     const domain = ent.split(".")[0];
     listItem.domain = domain;
 
-    const text = document.createElement("span");
-    text.innerText = domain;
-    text.slot = "trailing-supporting-text";
+    const text = createCE("span", {
+      attrs: {
+        slot: "trailing-supporting-text",
+      },
+      text: domain,
+    });
     listItem.appendChild(text);
 
-    // ha-state-icon Element erstellen
-    const stateIcon = document.createElement("ha-state-icon");
-    stateIcon.slot = "start";
-    stateIcon.hass = this._hass;
-    stateIcon.stateObj = st;
-    // Optionale Parameter
-    stateIcon.style.setProperty("--mdc-icon-size", "22px"); // Icon Größe
-    stateIcon.style.color = st.state === "on" ? "orange" : "gray";
+    const stateIcon = createCE("ha-state-icon", {
+      attrs: {
+        slot: "start",
+      },
+      props: {
+        hass: this._hass,
+        stateObj: st,
+      },
+      cssVars: {
+        "--mdc-icon-size": "28px",
+      },
+    });
 
     // Zum Container hinzufügen
     listItem.appendChild(stateIcon);

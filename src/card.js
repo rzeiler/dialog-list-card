@@ -1,3 +1,4 @@
+import { createCE, updateCE } from "./utils.js";
 import "./dialog.js";
 
 class DialogCard extends HTMLElement {
@@ -14,59 +15,75 @@ class DialogCard extends HTMLElement {
   render() {
     if (!this.shadowRoot) return;
 
-  console.log("card render");
+    if (this.card) return;
 
-    this.shadowRoot.innerHTML = `
-      <style>
-        ha-card{
-          display: flex; align-items: center; height: 100%; padding: 5px 10px; cursor: pointer;
-        }
-      </style>
-      <ha-card>
-        <div style="position: relative; display: flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; border-radius: 50px; overflow: hidden; transition: box-shadow 180ms ease-in-out; background-color: rgba(158,158,158,.1);">
-          <ha-icon icon="${this.config.icon}" style="--mdc-icon-size: 24px;" />
-        </div>
-        <ha-info style="padding: 5px 10px;">
-          <div>${this.config.title}</div>
-           <ha-relative-time  style="font-size: 90%;" ></ha-relative-time> 
-        </ha-info>
-      </ha-card> 
-      <dialog-list></dialog-list>
-    `;
+    this.card = createCE("ha-card", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        height: "100%",
+        padding: "5px 10px",
+        cursor: "pointer",
+      },
+    });
+    this.shadowRoot.appendChild(this.card);
+
+    const background = createCE("div", {
+      style: {
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: "36px",
+        height: "36px",
+        borderRadius: "50px",
+        overflow: "hidden",
+        transition: "box-shadow 180ms ease-in-out",
+        backgroundColor: "rgba(158,158,158,0.1)",
+      },
+    });
+    this.card.appendChild(background);
+
+    const stateIcon = createCE("ha-state-icon", {
+      attrs: {
+        icon: this.config.icon,
+      },
+      cssVars: {
+        "--mdc-icon-size": "28px",
+      },
+    });
+    background.appendChild(stateIcon);
+
+    const haInfo = createCE("ha-info", {
+      style: {
+        padding: "5px 10px",
+      },
+    });
+    this.card.appendChild(haInfo);
+
+    const text = createCE("div", { text: this.config.title });
+    haInfo.appendChild(text);
 
     const latestExecution = this._getLatestFromList(this.config.entities);
+    const relativeTime = createCE("ha-relative-time", {
+      props: {
+        hass: this._hass,
+        datetime: latestExecution,
+      },
+    });
+    haInfo.appendChild(relativeTime);
 
-    const relativeTime = this.shadowRoot.querySelector("ha-relative-time");
-    relativeTime.hass = this._hass;
-    relativeTime.datetime = latestExecution;
-
-    this.dialog = this.shadowRoot.querySelector("dialog-list");
-    this.dialog.config = this.config; // Config rein
-    if (this._hass) this.dialog.hass = this._hass; // hass nachziehen
-
-    const card = this.shadowRoot.querySelector("ha-card");
-    card.addEventListener("click", () => {
+    this.card.addEventListener("click", () => {
+      this.dialog = createCE("dialog-list");
+      this.shadowRoot.appendChild(this.dialog);
+      this.dialog.config = this.config;
+      this.dialog.hass = this._hass;
       this.dialog.open();
     });
-  
-    this.shadowRoot.querySelectorAll("button").forEach((btn) => {
-      btn.addEventListener("click", () =>
-        this._callService(btn.dataset.entity)
-      );
-    });
-  }
-
-  _callService(entity) {
-    if (!this.hass) return;
-    const domain = entity.split(".")[0];
-    this.hass.callService(domain, "toggle", { entity_id: entity });
   }
 
   set hass(hass) {
     this._hass = hass;
-    if (this._dialog) {
-      this._dialog.hass = hass; // Dialog mit hass versorgen
-    }
   }
   get hass() {
     return this._hass;
