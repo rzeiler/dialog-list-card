@@ -36,6 +36,19 @@ class DialogList extends HTMLElement {
         "--mdc-dialog-max-height": "calc(100% - 72px)",
       },
     });
+
+    const dialogaction = createCE("ha-icon-button", {
+      props: {
+        dialogaction: "cancel",
+      },
+      attrs: {
+        slot: "navigationIcon",
+      },
+    });
+
+    this.dialog.appendChild(this.dialogaction);
+    //<ha-icon-button slot="navigationIcon" dialogaction="cancel"></ha-icon-button>
+
     this.dialog.addEventListener("closed", () => {
       this.shadowRoot.innerHTML = "";
     });
