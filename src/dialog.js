@@ -1,4 +1,5 @@
 import { createCE, updateCE } from "./utils.js";
+import { mdiClose } from '@mdi/js';
 
 class DialogList extends HTMLElement {
   constructor() {
@@ -21,11 +22,9 @@ class DialogList extends HTMLElement {
   render() {
     this.dialog = createCE("ha-dialog", {
       props: {
-        heading: "Details",
         hideActions: true,
         scrimClickAction: true,
         escapeKeyAction: true,
-        heading: this._config.title,
       },
       cssVars: {
         "--vertical-align-dialog": "flex-start",
@@ -35,19 +34,33 @@ class DialogList extends HTMLElement {
         "--mdc-dialog-max-width": this.isWide ? "580px" : "90vw",
         "--mdc-dialog-max-height": "calc(100% - 72px)",
       },
+      attrs: {
+        heading: "",
+      },
     });
 
-    const dialogaction = createCE("ha-icon-button", {
-      props: {
-        dialogaction: "cancel",
+    const header = createCE("ha-dialog-header");
+    const title = createCE("span", {
+      attrs: {
+        slot: "title",
       },
+      text: this._config.dialog_title || this._config.title || "Dialog List",
+    });
+    header.appendChild(title);
+
+    const closeBtn = createCE("ha-icon-button", {
       attrs: {
         slot: "navigationIcon",
+        dialogAction: "cancel",
+        label:`${this._hass.localize("ui.common.close")}`,
+      },
+      props: {
+        path: mdiClose,
       },
     });
 
-    this.dialog.appendChild(this.dialogaction);
-    //<ha-icon-button slot="navigationIcon" dialogaction="cancel"></ha-icon-button>
+    header.appendChild(closeBtn);
+    this.dialog.appendChild(header);
 
     this.dialog.addEventListener("closed", () => {
       this.shadowRoot.innerHTML = "";

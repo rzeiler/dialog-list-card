@@ -1,3 +1,5 @@
+import { createCE, updateCE } from "./utils.js";
+
 class DialogListEditor extends HTMLElement {
   constructor() {
     super();
@@ -5,9 +7,9 @@ class DialogListEditor extends HTMLElement {
 
     // ✅ Default Config
     this._config = {
-      title: "",
+      title: "Services",
       icon: "mdi:menu",
-      dialog_title: "",
+      dialog_title: "Chose Service",
       state_on_entity: "",
       host: "",
       entities: [],
@@ -22,21 +24,73 @@ class DialogListEditor extends HTMLElement {
     // ✅ Config mit Defaults mergen
     this._config = {
       ...{
-        title: "",
-        icon: "mdi:menu",
-        dialog_title: "",
+        title: "Services",
+        icon: "mdi:unicorn",
+        dialog_title: "Chose Service",
         state_on_entity: "",
         host: "",
         entities: [],
       },
       ...config,
     };
-    this.render();
+    this.renderted ? this.update() : this.render();
   }
 
   connectedCallback() {
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
-    this.render();
+    this.renderted ? this.update() : this.render();
+  }
+
+  update() {
+    if (!this.shadowRoot) return;
+
+    if (!this._hass) return;
+
+    if (!this._config) return;
+
+    this.shadowRoot.getElementById("title").value = this._config.title || "";
+    this.shadowRoot.getElementById("dialog_title").value =
+      this._config.dialog_title || "";
+    this.shadowRoot.getElementById("icon").value = this._config.icon || "";
+
+    let forms = this.shadowRoot.querySelectorAll("ha-form");
+    const target = Array.from(forms).find((el) => el.id === "state_on_entity");
+    target.schema = [{ name: "entity", selector: { entity: {} } }];
+    target.hass = this._hass;
+    target.data = { entity: this._config.state_on_entity };
+    target.addEventListener("value-changed", (ev) =>
+       this._updateConfig("state_on_entity", ev.detail.value.entity)
+    );
+
+    const entities = this.shadowRoot.getElementById("entities");
+
+    (this._config.entities || []).map((ent, idx) => {
+      let target = Array.from(forms).find((el) => el.id === `entity${idx}`);
+
+      if (target === undefined) {
+        target = createCE("ha-form", {
+          attrs: {
+            id: `entity${idx}`,
+            class: "pb-1",
+          },
+          style: {
+            "--mdc-dialog-content-ink-color": "transparent",
+          },
+        });
+
+        target.addEventListener("value-changed", (ev) =>
+          this._updateEntity(idx, ev.detail.value.entity)
+        );
+        entities.appendChild(target);
+      }
+
+      target.schema = [{ name: "entity", selector: { entity: {} } }];
+      target.hass = this._hass;
+      target.data = { entity: ent.entity };
+    });
+
+    forms = this.shadowRoot.querySelectorAll("ha-form");
+    this.removeLabel(forms);
   }
 
   render() {
@@ -45,6 +99,8 @@ class DialogListEditor extends HTMLElement {
     if (!this._hass) return;
 
     if (!this._config) return;
+
+    this.renderted = true;
 
     console.log("render");
 
@@ -86,7 +142,7 @@ class DialogListEditor extends HTMLElement {
             id="state_on_entity"
           ></ha-form>
         </ha-expansion-panel>
-        <ha-expansion-panel expanded outlined icon="menu" header="Entitäten (erforderlich)">
+        <ha-expansion-panel id="entities" expanded outlined icon="menu" header="Entitäten (erforderlich)">
             ${(this._config.entities || [])
               .map(
                 (ent, idx) =>
@@ -112,28 +168,7 @@ class DialogListEditor extends HTMLElement {
       target.data = { entity: ent.entity };
     });
 
-    (async () => {
-      const selectors = [
-        "ha-selector",
-        "ha-selector-entity",
-        "ha-entity-picker",
-        "ha-generic-picker",
-        "label",
-      ];
-      for (const form of forms) {
-        let element = form;
-        for (const sel of selectors) {
-          element = await this.waitForElement(element, sel, 100);
-          console.log(element);
-
-          if (sel == "label" && element.parentNode) {
-            element.parentNode.removeChild(element);
-          }
-
-          if (!element) break; // falls ein Element nicht gefunden wird
-        }
-      }
-    })();
+    this.removeLabel(forms);
 
     // Event-Listener binden
     this.shadowRoot
@@ -173,6 +208,30 @@ class DialogListEditor extends HTMLElement {
       ?.addEventListener("click", () => this._addEntity());
   }
 
+  removeLabel(forms) {
+    (async () => {
+      const selectors = [
+        "ha-selector",
+        "ha-selector-entity",
+        "ha-entity-picker",
+        "ha-generic-picker",
+        "label",
+      ];
+      for (const form of forms) {
+        let element = form;
+        for (const sel of selectors) {
+          element = await this.waitForElement(element, sel, 100);
+
+          if (sel == "label" && element && element.parentNode) {
+            element.parentNode.removeChild(element);
+          }
+
+          if (!element) break; // falls ein Element nicht gefunden wird
+        }
+      }
+    })();
+  }
+
   waitForElement(parent, selector, timeout = 50) {
     return new Promise((resolve) => {
       const start = Date.now();
@@ -205,7 +264,7 @@ class DialogListEditor extends HTMLElement {
       ...this._config,
       entities: [...this._config.entities, ""],
     };
-    this.render();
+    this.fireChange();
   }
 
   fireChange() {

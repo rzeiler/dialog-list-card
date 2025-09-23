@@ -3,7 +3,21 @@ import "./dialog.js";
 
 class DialogCard extends HTMLElement {
   setConfig(config) {
-    this.config = config || { title: "", entities: [] };
+    //this.config = config || { title: "", entities: [] };
+
+    this.config = {
+      ...{
+        title: "Services",
+        icon: "mdi:unicorn",
+        dialog_title: "Chose Service",
+        state_on_entity: "",
+        host: "",
+        entities: [],
+      },
+      ...config,
+    };
+ 
+
     this.render();
   }
 
@@ -64,7 +78,12 @@ class DialogCard extends HTMLElement {
     const text = createCE("div", { text: this.config.title });
     haInfo.appendChild(text);
 
-    const latestExecution = this._getLatestFromList(this.config.entities);
+    let latestExecution = this._getLatestFromList(this.config.entities);
+
+    if (this.config.entities === undefined || this.config.entities.length === 0) {
+      latestExecution = Date.now();
+    }
+
     const relativeTime = createCE("ha-relative-time", {
       props: {
         hass: this._hass,
@@ -90,7 +109,7 @@ class DialogCard extends HTMLElement {
   }
 
   _getLatestFromList(entityIds) {
-    const dates = entityIds
+    const dates = (entityIds || [])
       .map((entityId) => {
         const state = this._hass.states[entityId.entity];
         const lastTime =
@@ -98,8 +117,8 @@ class DialogCard extends HTMLElement {
         return lastTime ? new Date(lastTime) : null;
       })
       .filter((date) => date !== null)
-      .sort((a, b) => b - a); // Absteigende Sortierung
-    return dates[0] || null; // Jüngstes Datum
+      .sort((a, b) => b - a);
+    return dates[0] || null;
   }
 
   getCardSize() {
@@ -126,4 +145,5 @@ window.customCards.push({
   type: "dialog-list-card",
   name: "Dialog List Card",
   description: "Ein Dialog mit Aktionen",
+  preview: true,
 });
