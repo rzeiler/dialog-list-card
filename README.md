@@ -64,7 +64,7 @@ MIT © [Zeiler R](https://github.com/rzeiler)
 
 [version-src]: https://img.shields.io/github/v/release/rzeiler/dialog-list-card?display_name=tag&sort=semver
 [hits-src]: https://data.jsdelivr.com/v1/package/gh/rzeiler/dialog-list-card/badge
-[downloads-src]: https://img.shields.io/github/downloads/rzeiler/dialog-list-card/total?label=installs%20(HACS)
+[downloads-src]: https://img.shields.io/github/downloads/rzeiler/dialog-list-card/latest/total?label=installs%20(HACS)
 [hacs-src]: https://flat.badgen.net/badge/HACS/default/orange
 [total-src]: https://img.shields.io/github/downloads/rzeiler/dialog-list-card/total?label=Downloads%20Total
 

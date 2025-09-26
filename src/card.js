@@ -16,7 +16,6 @@ class DialogCard extends HTMLElement {
       },
       ...config,
     };
- 
 
     this.render();
   }
@@ -71,16 +70,28 @@ class DialogCard extends HTMLElement {
     const haInfo = createCE("ha-info", {
       style: {
         padding: "5px 10px",
+        overflow: "hidden",
       },
     });
     this.card.appendChild(haInfo);
 
-    const text = createCE("div", { text: this.config.title });
+    const text = createCE("div", {
+      text: this.config.title,
+      style: {
+        display: "block",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+      },
+    });
     haInfo.appendChild(text);
 
     let latestExecution = this._getLatestFromList(this.config.entities);
 
-    if (this.config.entities === undefined || this.config.entities.length === 0) {
+    if (
+      this.config.entities === undefined ||
+      this.config.entities.length === 0
+    ) {
       latestExecution = Date.now();
     }
 
@@ -88,6 +99,9 @@ class DialogCard extends HTMLElement {
       props: {
         hass: this._hass,
         datetime: latestExecution,
+      },
+      style: {
+        fontSize: "90%",
       },
     });
     haInfo.appendChild(relativeTime);

@@ -1,5 +1,5 @@
 import { createCE, updateCE } from "./utils.js";
-import { mdiClose } from '@mdi/js';
+import { mdiClose } from "@mdi/js";
 
 class DialogList extends HTMLElement {
   constructor() {
@@ -30,8 +30,6 @@ class DialogList extends HTMLElement {
         "--vertical-align-dialog": "flex-start",
         "--dialog-surface-margin-top": "40px",
         "--dialog-content-padding": "0px",
-        "--mdc-dialog-min-width": this.isWide ? "580px" : "90vw",
-        "--mdc-dialog-max-width": this.isWide ? "580px" : "90vw",
         "--mdc-dialog-max-height": "calc(100% - 72px)",
       },
       attrs: {
@@ -52,7 +50,7 @@ class DialogList extends HTMLElement {
       attrs: {
         slot: "navigationIcon",
         dialogAction: "cancel",
-        label:`${this._hass.localize("ui.common.close")}`,
+        label: `${this._hass.localize("ui.common.close")}`,
       },
       props: {
         path: mdiClose,
@@ -85,7 +83,7 @@ class DialogList extends HTMLElement {
   }
 
   isWide() {
-    return window.matchMedia("(min-width: 600px) and (min-height: 501px)")
+    return window.matchMedia("(min-width: 590px) and (min-height: 500px)")
       .matches;
   }
 
@@ -109,6 +107,15 @@ class DialogList extends HTMLElement {
 
   open() {
     this.render();
+
+    const value = this.isWide() ? "570px" : "90vw";
+    updateCE(this.dialog, {
+      cssVars: {
+        "--mdc-dialog-min-width": value,
+        "--mdc-dialog-max-width": value,
+      },
+    });
+
     this.dialog.open = !this.dialog.open;
   }
 

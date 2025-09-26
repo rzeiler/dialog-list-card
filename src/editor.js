@@ -112,9 +112,6 @@ class DialogListEditor extends HTMLElement {
           grid-column-gap:10px;
           grid-row-gap: 24px;
         }
-        ha-button {
-          padding-top: 10px;
-        }  
         --mdc-dialog-content-ink-color: red; 
       </style>
       <ha-form-expandable>
@@ -142,14 +139,16 @@ class DialogListEditor extends HTMLElement {
             id="state_on_entity"
           ></ha-form>
         </ha-expansion-panel>
-        <ha-expansion-panel id="entities" expanded outlined icon="menu" header="Entitäten (erforderlich)">
+        <ha-expansion-panel expanded outlined icon="menu" header="Entitäten (erforderlich)">
+          <div id="entities">
             ${(this._config.entities || [])
               .map(
                 (ent, idx) =>
                   `<ha-form style="--mdc-dialog-content-ink-color:transparent;" class='pb-1' id="entity${idx}"></ha-form>`
               )
               .join("")}
-            <ha-button id="addEntity">+ Entity hinzufügen</ha-button>
+            </div>  
+            <ha-button id="addEntity" style="margin-top: 20px;" >+ Entity hinzufügen</ha-button>
         </ha-expansion-panel>
       </ha-form-expandable>
     `;

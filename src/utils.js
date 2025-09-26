@@ -98,12 +98,14 @@ function createCE(tag, options = {}) {
  * updateCE - update props and attributes on an existing element
  * safer updates: only updates keys present in passed objects
  */
-function updateCE(el, { props = {}, attrs = {}, style = {}, text = "" } = {}) {
+function updateCE(el, { props = {}, attrs = {}, style = {}, cssVars = {}, text = "" } = {}) {
   if (el == null) return el;
   if (attrs && Object.keys(attrs).length) setAttributes(el, attrs);
   if (props && Object.keys(props).length) setProperties(el, props);
   if (style && Object.keys(style).length) setStyles(el, style);
   if (text) el.innerText = text;
+  if (cssVars && Object.keys(cssVars).length) setCssVars(el.style, cssVars);
+
   return el;
 }
 
