@@ -1,188 +1,142 @@
-import { createCE, updateCE } from "./utils.js";
+import { LitElement, html, css } from "lit";
 import { mdiClose } from "@mdi/js";
 
-class DialogList extends HTMLElement {
+class DialogList extends LitElement {
+  static properties = {
+    hass: { type: Object },
+    config: { type: Object },
+    _isOpen: { state: true },
+  };
+
+  static styles = css`
+    :host {
+      display: block;
+    }
+
+    ha-dialog {
+      --vertical-align-dialog: flex-start;
+      --dialog-surface-margin-top: 40px;
+      --dialog-content-padding: 0px;
+      --mdc-dialog-max-height: calc(100% - 72px);
+    }
+
+    ha-dialog.wide {
+      --mdc-dialog-min-width: 570px;
+      --mdc-dialog-max-width: 570px;
+    }
+
+    ha-dialog.narrow {
+      --mdc-dialog-min-width: 90vw;
+      --mdc-dialog-max-width: 90vw;
+    }
+
+    ha-state-icon {
+      --mdc-icon-size: 28px;
+    }
+  `;
+
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
-    this._hass = null;
-    this._config = null;
+    this.hass = null;
+    this.config = null;
+    this._isOpen = false;
   }
-
-  set hass(hass) {
-    this._hass = hass;
-  }
-
-  set config(config) {
-    this._config = config;
-  }
-
-  connectedCallback() {}
 
   render() {
-    this.dialog = createCE("ha-dialog", {
-      props: {
-        hideActions: true,
-        scrimClickAction: true,
-        escapeKeyAction: true,
-      },
-      cssVars: {
-        "--vertical-align-dialog": "flex-start",
-        "--dialog-surface-margin-top": "40px",
-        "--dialog-content-padding": "0px",
-        "--mdc-dialog-max-height": "calc(100% - 72px)",
-      },
-      attrs: {
-        heading: "",
-      },
-    });
+    if (!this._isOpen) return html``;
 
-    const header = createCE("ha-dialog-header");
-    const title = createCE("span", {
-      attrs: {
-        slot: "title",
-      },
-      text: this._config.dialog_title || this._config.title || "Dialog List",
-    });
-    header.appendChild(title);
+    const dialogClass = this._isWide() ? "wide" : "narrow";
+    const dialogTitle =
+      this.config.dialog_title || this.config.title || "Dialog List";
 
-    const closeBtn = createCE("ha-icon-button", {
-      attrs: {
-        slot: "navigationIcon",
-        dialogAction: "cancel",
-        label: `${this._hass.localize("ui.common.close")}`,
-      },
-      props: {
-        path: mdiClose,
-      },
-    });
+    return html`
+      <ha-dialog
+        class=${dialogClass}
+        .open=${this._isOpen}
+        .hideActions=${true}
+        .scrimClickAction=${true}
+        .escapeKeyAction=${true}
+        @closed=${this._handleClosed}
+        heading=""
+      >
+        <ha-dialog-header>
+          <span slot="title">${dialogTitle}</span>
+          <ha-icon-button
+            slot="navigationIcon"
+            dialogAction="cancel"
+            .label=${this.hass.localize("ui.common.close")}
+            .path=${mdiClose}
+          ></ha-icon-button>
+        </ha-dialog-header>
 
-    header.appendChild(closeBtn);
-    this.dialog.appendChild(header);
-
-    this.dialog.addEventListener("closed", () => {
-      this.shadowRoot.innerHTML = "";
-    });
-
-    this.shadowRoot.appendChild(this.dialog);
-
-    this.list = createCE("ha-list");
-    this.dialog.appendChild(this.list);
-
-    this._config.entities.map((ent) => {
-      const st = this._hass.states[ent];
-      const listIitem = this.getListItem(ent);
-
-      // Aktion aufrufen
-      const call = () => this.serviceCall(listIitem.domain, ent);
-      listIitem.addEventListener("click", call);
-      listIitem.addEventListener("touchend", call);
-
-      this.list.appendChild(listIitem);
-    });
+        <ha-list>
+          ${this.config.entities.map((ent) => this._renderListItem(ent))}
+        </ha-list>
+      </ha-dialog>
+    `;
   }
 
-  isWide() {
+  _renderListItem(item) {
+    const ent = typeof item === "string" ? item : item.entity;
+    const st = this.hass.states[ent];
+    if (!st) return html``;
+
+    const domain = ent.split(".")[0];
+    const title = item.title || st.attributes.friendly_name || ent;
+
+    return html`
+      <ha-md-list-item
+        .interactive=${true}
+        .multiline=${true}
+        type="button"
+        @click=${() => this._serviceCall(domain, ent)}
+      >
+        <ha-state-icon
+          slot="start"
+          .hass=${this.hass}
+          .stateObj=${st}
+        ></ha-state-icon>
+
+        <span slot="headline">${title}</span>
+
+        <ha-relative-time
+          slot="supporting-text"
+          .hass=${this.hass}
+          .datetime=${st?.attributes.last_triggered}
+        ></ha-relative-time>
+      </ha-md-list-item>
+    `;
+  }
+
+  _isWide() {
     return window.matchMedia("(min-width: 590px) and (min-height: 500px)")
       .matches;
   }
 
-  serviceCall(domain, ent) {
-    var action = "toggle";
+  _serviceCall(domain, ent) {
+    let action = "toggle";
 
     if (domain === "script") {
       action = "turn_on";
     } else if (domain === "scene") {
       action = "turn_on";
     }
-    this._hass
+
+    this.hass
       .callService(domain, action, {
-        entity_id: ent.entity,
+        entity_id: ent,
       })
-      .then((d) => {
-        console.log("then", d);
-        this.dialog.remove();
+      .then(() => {
+        this._isOpen = false;
       });
   }
 
-  open() {
-    this.render();
-
-    const value = this.isWide() ? "570px" : "90vw";
-    updateCE(this.dialog, {
-      cssVars: {
-        "--mdc-dialog-min-width": value,
-        "--mdc-dialog-max-width": value,
-      },
-    });
-
-    this.dialog.open = !this.dialog.open;
+  _handleClosed() {
+    this._isOpen = false;
   }
 
-  getListItem(item) {
-    const ent = typeof item === "string" ? item : item.entity;
-    const st = this._hass.states[ent];
-    if (!st) return;
-
-    const listItem = createCE("ha-md-list-item", {
-      props: {
-        interactive: true,
-        multiline: true,
-      },
-      attrs: {
-        type: "button",
-      },
-    });
-
-    const relativeTime = createCE("ha-relative-time", {
-      props: {
-        hass: this._hass,
-        datetime: st?.attributes.last_triggered,
-      },
-      attrs: {
-        slot: "supporting-text",
-      },
-    });
-
-    listItem.appendChild(relativeTime);
-
-    const headline = createCE("span", {
-      attrs: {
-        slot: "headline",
-        datetime: st?.attributes.last_triggered,
-      },
-      text: item.title || st.attributes.friendly_name || ent,
-    });
-    listItem.appendChild(headline);
-
-    const domain = ent.split(".")[0];
-    listItem.domain = domain;
-
-    const text = createCE("span", {
-      attrs: {
-        slot: "trailing-supporting-text",
-      },
-      text: domain,
-    });
-    listItem.appendChild(text);
-
-    const stateIcon = createCE("ha-state-icon", {
-      attrs: {
-        slot: "start",
-      },
-      props: {
-        hass: this._hass,
-        stateObj: st,
-      },
-      cssVars: {
-        "--mdc-icon-size": "28px",
-      },
-    });
-
-    // Zum Container hinzufügen
-    listItem.appendChild(stateIcon);
-
-    return listItem;
+  open() {
+    this._isOpen = true;
   }
 }
 
