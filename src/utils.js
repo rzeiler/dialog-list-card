@@ -1,7 +1,7 @@
 // src/utils.js
 // Minimal helper lib for working with Custom Elements (WebComponents)
 // No frameworks. Exports small utilities: createCE, updateCE.
-
+ 
 function isObject(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
@@ -88,7 +88,7 @@ function createCE(tag, options = {}) {
   if (style) {
     Object.assign(el.style, style);
   }
- 
+
   setCssVars(el.style, cssVars);
 
   return el;
@@ -98,7 +98,10 @@ function createCE(tag, options = {}) {
  * updateCE - update props and attributes on an existing element
  * safer updates: only updates keys present in passed objects
  */
-function updateCE(el, { props = {}, attrs = {}, style = {}, cssVars = {}, text = "" } = {}) {
+function updateCE(
+  el,
+  { props = {}, attrs = {}, style = {}, cssVars = {}, text = "" } = {}
+) {
   if (el == null) return el;
   if (attrs && Object.keys(attrs).length) setAttributes(el, attrs);
   if (props && Object.keys(props).length) setProperties(el, props);
