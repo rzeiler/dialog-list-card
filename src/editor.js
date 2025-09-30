@@ -29,6 +29,12 @@ class DialogListEditor extends LitElement {
       grid-column-gap: 10px;
       grid-row-gap: 24px;
     }
+    .wide {
+      grid-column: 1 / -1; /* von erster bis letzter Spalte */
+    }
+    .pt-2 {
+      padding-top: 0.5em;
+    }
   `;
 
   setConfig(config) {
@@ -47,8 +53,12 @@ class DialogListEditor extends LitElement {
     if (!this.hass || !this.config) return html``;
 
     return html`
-        
-      
+      <ha-form
+        style="display:none"
+        .hass=${this.hass}
+        .data=${{}}
+        .schema=${[{ name: "", selector: { entity: {} } }]}
+      ></ha-form>
       <ha-form-expandable>
         <!-- Titel -->
         <ha-expansion-panel expanded outlined icon="menu" header="Titles">
@@ -71,8 +81,8 @@ class DialogListEditor extends LitElement {
               @value-changed=${(e) =>
                 this._updateConfig("icon", e.detail.value)}
             ></ha-icon-picker>
-            <div></div>
             <ha-entity-picker
+              class="wide"
               label="State On Entity"
               .hass=${this.hass}
               .value=${this.config.state_on_entity}
@@ -81,7 +91,6 @@ class DialogListEditor extends LitElement {
             ></ha-entity-picker>
           </ha-form-grid>
         </ha-expansion-panel>
-
         <!-- Entities -->
         <ha-expansion-panel
           expanded
@@ -89,10 +98,11 @@ class DialogListEditor extends LitElement {
           icon="menu"
           header="Entitäten (erforderlich)"
         >
-          <div id="entities">
+          <ha-form-grid>
             ${this.config.entities.map(
               (ent, idx) => html`
                 <ha-entity-picker
+                  class="wide"
                   label=""
                   .hass=${this.hass}
                   .value=${ent.entity}
@@ -102,13 +112,18 @@ class DialogListEditor extends LitElement {
                 ></ha-entity-picker>
               `
             )}
-          </div>
-
-          <ha-button style="margin-top: 20px;" @click=${this._addEntity}>
-            + Entity hinzufügen
-          </ha-button>
+            <ha-entity-picker
+              class="wide"
+              label="Entity hinzufügen"
+              .hass=${this.hass}
+              @value-changed=${(e) => {
+                this._addEntity({ entity: e.detail.value });
+                e.target.value = "";
+              }}
+            ></ha-entity-picker>
+          </ha-form-grid>
         </ha-expansion-panel>
-      </ha-form-expandable> 
+      </ha-form-expandable>
     `;
   }
 
@@ -125,10 +140,10 @@ class DialogListEditor extends LitElement {
     this._fireChange();
   }
 
-  _addEntity() {
+  _addEntity(value) {
     this.config = {
       ...this.config,
-      entities: [...this.config.entities, ""],
+      entities: [...this.config.entities, value],
     };
     this._fireChange();
   }
